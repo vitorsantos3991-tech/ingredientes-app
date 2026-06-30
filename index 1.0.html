@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INGREDIENTES APP - Busca e Gerador de Documentos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #4a3f9f 0%, #6366f1 100%);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .header-title h1 {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* TABS */
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: white;
+            color: #4a3f9f;
+            border: 2px solid #4a3f9f;
+            font-weight: bold;
+        }
+
+        .tab-button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .tab-button.active {
+            background-color: #4a3f9f;
+            color: white;
+        }
+
+        /* TAB CONTENT */
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* STATS */
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        /* UPLOAD SECTION */
+        .upload-section {
+            background: #f0f9ff;
+            border: 2px dashed #0ea5e9;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            background: #e0f2fe;
+            border-color: #0284c7;
+        }
+
+        .upload-section input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: #0284c7;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .upload-subtext {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* SEARCH TAB */
+        .search-box {
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4a3f9f;
+            box-shadow: 0 0 0 3px rgba(74, 63, 159, 0.1);
+        }
+
+        .results-info {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .results-container {
+            display: grid;
+            gap: 15px;
+        }
+
+        .ingredient-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+            transition: all 0.3s;
+        }
+
+        .ingredient-card:hover {
+            border-color: #4a3f9f;
+            background-color: #f5f5ff;
+            box-shadow: 0 4px 12px rgba(74, 63, 159, 0.15);
+        }
+
+        .ingredient-label {
+            font-size: 12px;
+            color: #4a3f9f;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .ingredient-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .ingredient-english {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .btn-add {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-add:hover {
+            background-color: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        /* FORM TAB */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4a3f9f;
+            box-shadow: 0 0 0 3px rgba(74, 63, 159, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a3f9f;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .ingredients-added {
+            background-color: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .ingredients-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .ingredient-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background-color: #0ea5e9;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .ingredient-item {
+            background-color: white;
+            border: 1px solid #0ea5e9;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ingredient-item-info {
+            flex: 1;
+        }
+
+        .ingredient-item-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .ingredient-item-english {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .btn-remove {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-remove:hover {
+            background-color: #dc2626;
+        }
+
+        .buttons-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .buttons-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn-primary {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-word {
+            background-color: #4a3f9f;
+            color: white;
+        }
+
+        .btn-word:hover {
+            background-color: #3a2f7f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 63, 159, 0.3);
+        }
+
+        .btn-index {
+            background-color: #0ea5e9;
+            color: white;
+        }
+
+        .btn-index:hover {
+            background-color: #0284c7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        /* INDEX TAB */
+        .index-section {
+            background-color: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .index-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0284c7;
+            margin-bottom: 15px;
+        }
+
+        .index-description {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .btn-index-link {
+            background-color: #0284c7;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-index-link:hover {
+            background-color: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .hint {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #0c4a6e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-title">
+                <span style="font-size: 28px;">🧪</span>
+                <h1>INGREDIENTES APP</h1>
+            </div>
+            <div class="header-subtitle">
+                Busca de composições cosméticas | Gerador de Word | Integração INDEX
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs-container">
+            <button class="tab-button active" onclick="switchTab('search')">🔍 BUSCA</button>
+            <button class="tab-button" onclick="switchTab('form')">📄 GERAR WORD</button>
+            <button class="tab-button" onclick="switchTab('index')">🌐 INDEX ABC</button>
+        </div>
+
+        <!-- ABA: BUSCA -->
+        <div id="search" class="tab-content active">
+            <h2 style="margin-bottom: 20px;">🔍 BUSCAR INGREDIENTES</h2>
+            
+            <!-- UPLOAD SECTION -->
+            <div class="upload-section" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Carregar arquivo Excel ou JSON</div>
+                <div class="upload-subtext">Arraste aqui ou clique para selecionar arquivo</div>
+                <input type="file" id="fileInput" accept=".json,.xlsx,.xls" onchange="handleFileUpload(event)">
+            </div>
+
+            <!-- STATS -->
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="stat-label">Total de Ingredientes</div>
+                    <div class="stat-number" id="totalIngredients">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Resultados Encontrados</div>
+                    <div class="stat-number" id="resultsFound">0</div>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Digite para buscar ingredientes (ex: perfume, mica, kaolin...)"
+                    onkeyup="performSearch()"
+                >
+            </div>
+
+            <div id="resultsInfo" class="results-info"></div>
+            <div id="resultsContainer" class="results-container"></div>
+        </div>
+
+        <!-- ABA: GERAR DOCUMENTO -->
+        <div id="form" class="tab-content">
+            <h2 style="margin-bottom: 30px;">📄 GERAR DOCUMENTO WORD</h2>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="productName">* NOME DO PRODUTO</label>
+                    <input type="text" id="productName" placeholder="Ex: SHAMPOO ANTI-FRIZZ">
+                </div>
+                <div class="form-group">
+                    <label for="modoUso">MODO DE USO (Opcional)</label>
+                    <input type="text" id="modoUso" placeholder="Ex: Aplicar e deixar 5 minutos">
+                </div>
+                <div class="form-group">
+                    <label for="validade">VALIDADE (Opcional)</label>
+                    <input type="text" id="validade" placeholder="Ex: 36 MESES">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="precaucoes">PRECAUÇÕES (Opcional)</label>
+                <textarea id="precaucoes" placeholder="Ex: Evitar contato com os olhos..."></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fornecedor">NOME DO FORNECEDOR (Opcional)</label>
+                    <input type="text" id="fornecedor" placeholder="Ex: XYZ COSMÉTICOS LTDA">
+                </div>
+                <div class="form-group">
+                    <label for="cnpj">CNPJ (Opcional)</label>
+                    <input type="text" id="cnpj" placeholder="00.000.000/0000-00">
+                </div>
+                <div class="form-group">
+                    <label for="endereco">ENDEREÇO (Opcional)</label>
+                    <input type="text" id="endereco" placeholder="Rua..., nº...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="responsavel">RESPONSÁVEL TÉCNICO (Opcional)</label>
+                    <input type="text" id="responsavel" placeholder="Nome completo">
+                </div>
+                <div class="form-group">
+                    <label for="sac">SAC (Opcional)</label>
+                    <input type="text" id="sac" placeholder="Telefone ou Email">
+                </div>
+                <div class="form-group">
+                    <label for="paisOrigem">PAÍS DE ORIGEM (Opcional)</label>
+                    <input type="text" id="paisOrigem" placeholder="BRASIL">
+                </div>
+            </div>
+
+            <!-- INGREDIENTES ADICIONADOS -->
+            <div class="form-section-title">📦 INGREDIENTES ADICIONADOS</div>
+
+            <div id="ingredientsAdded" class="ingredients-added">
+                <div class="ingredients-header">
+                    <span>Ingredientes adicionados:</span>
+                    <span class="ingredient-count" id="ingredientCount">0</span>
+                </div>
+                <div id="ingredientsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>Nenhum ingrediente adicionado ainda.</p>
+                        <p>Use a aba "BUSCA" para adicionar ingredientes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTÕES DE AÇÃO -->
+            <div class="buttons-container">
+                <button class="btn-primary btn-word" onclick="generateWord()">
+                    📥 GERAR E BAIXAR WORD
+                </button>
+                <button class="btn-primary btn-index" onclick="goToIndex()">
+                    🌐 ACESSAR INDEX ABC ONLINE
+                </button>
+            </div>
+        </div>
+
+        <!-- ABA: INDEX ABC -->
+        <div id="index" class="tab-content">
+            <div class="index-section">
+                <div class="index-title">🌐 PESQUISAR NO INDEX ABC</div>
+                <div class="index-description">
+                    Acesse a base de dados completa do INDEX ABC Online para consultar informações regulatórias 
+                    de ingredientes cosméticos. A página será aberta em uma nova aba do seu navegador.
+                </div>
+                <a href="https://index.casadacosmetologia.com.br/" target="_blank" class="btn-index-link">
+                    🔗 ACESSAR INDEX ABC ONLINE
+                </a>
+                <div class="hint">
+                    💡 <strong>Dica:</strong> O INDEX ABC é a principal base de dados regulatória para ingredientes cosméticos. 
+                    Você pode fazer login com suas credenciais para acessar informações completas.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        // DADOS GLOBAIS
+        let allIngredients = [];
+        let selectedIngredients = [];
+
+        // UPLOAD DE ARQUIVO
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.name.endsWith('.json')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        allIngredients = JSON.parse(e.target.result);
+                        updateTotalCount();
+                        alert(`✅ ${allIngredients.length} ingredientes carregados com sucesso!`);
+                    } catch (error) {
+                        alert('❌ Erro ao carregar arquivo JSON');
+                    }
+                };
+                reader.readAsText(file);
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(sheet);
+                        
+                        allIngredients = rows.map((row, idx) => ({
+                            id: idx + 1,
+                            en: row['INGREDIENTE (INGLÊS)'] || row['INCI NAME'] || '',
+                            pt: row['INGREDIENTE (PORTUGUÊS)'] || row['TRADUÇÃO ANVISA'] || '',
+                            obs: row['OBSERVAÇÕES'] || null
+                        })).filter(ing => ing.en && ing.pt);
+                        
+                        updateTotalCount();
+                        alert(`✅ ${allIngredients.length} ingredientes carregados com sucesso!`);
+                    } catch (error) {
+                        alert('❌ Erro ao carregar arquivo Excel');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        // ATUALIZAR CONTAGEM TOTAL
+        function updateTotalCount() {
+            document.getElementById('totalIngredients').textContent = allIngredients.length;
+        }
+
+        // BUSCAR INGREDIENTES
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const container = document.getElementById('resultsContainer');
+            const infoDiv = document.getElementById('resultsInfo');
+            const resultsFound = document.getElementById('resultsFound');
+
+            if (!searchTerm) {
+                container.innerHTML = '';
+                infoDiv.innerHTML = '';
+                resultsFound.textContent = '0';
+                return;
+            }
+
+            const results = allIngredients.filter(ing => 
+                ing.pt.toLowerCase().includes(searchTerm) || 
+                ing.en.toLowerCase().includes(searchTerm)
+            );
+
+            resultsFound.textContent = results.length;
+
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>Nenhum ingrediente encontrado para "${searchTerm}"</p>
+                    </div>
+                `;
+                infoDiv.innerHTML = '';
+                return;
+            }
+
+            infoDiv.innerHTML = `
+                <strong>🎯 ${results.length} resultado(s) encontrado(s)</strong>
+            `;
+
+            container.innerHTML = results.map(ing => `
+                <div class="ingredient-card">
+                    <div class="ingredient-label">INGREDIENTE</div>
+                    <div class="ingredient-name">${ing.pt}</div>
+                    <div class="ingredient-english">${ing.en}</div>
+                    <button class="btn-add" onclick="addIngredient(${ing.id}, '${ing.pt.replace(/'/g, "\\'")}', '${ing.en.replace(/'/g, "\\'")}')"">
+                        ✅ ADICIONAR
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // ADICIONAR INGREDIENTE
+        function addIngredient(id, ptName, enName) {
+            if (selectedIngredients.some(ing => ing.id === id)) {
+                alert('Este ingrediente já foi adicionado!');
+                return;
+            }
+
+            selectedIngredients.push({id, pt: ptName, en: enName});
+            updateIngredientsList();
+            switchTab('form');
+        }
+
+        // ATUALIZAR LISTA DE INGREDIENTES
+        function updateIngredientsList() {
+            const list = document.getElementById('ingredientsList');
+            const count = document.getElementById('ingredientCount');
+
+            count.textContent = selectedIngredients.length;
+
+            if (selectedIngredients.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>Nenhum ingrediente adicionado ainda.</p>
+                        <p>Use a aba "BUSCA" para adicionar ingredientes.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = selectedIngredients.map((ing, idx) => `
+                <div class="ingredient-item">
+                    <div class="ingredient-item-info">
+                        <div class="ingredient-item-name">${ing.pt}</div>
+                        <div class="ingredient-item-english">${ing.en}</div>
+                    </div>
+                    <button class="btn-remove" onclick="removeIngredient(${idx})">✕ REMOVER</button>
+                </div>
+            `).join('');
+        }
+
+        // REMOVER INGREDIENTE
+        function removeIngredient(idx) {
+            selectedIngredients.splice(idx, 1);
+            updateIngredientsList();
+        }
+
+        // TROCAR ABA
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // GERAR ARQUIVO WORD
+        function generateWord() {
+            const productName = document.getElementById('productName').value.trim();
+
+            if (!productName) {
+                alert('⚠️ Por favor, preencha o NOME DO PRODUTO');
+                return;
+            }
+
+            if (selectedIngredients.length === 0) {
+                alert('⚠️ Por favor, adicione pelo menos um ingrediente');
+                return;
+            }
+
+            const data = {
+                productName: productName.toUpperCase(),
+                modoUso: document.getElementById('modoUso').value.trim().toUpperCase(),
+                precaucoes: document.getElementById('precaucoes').value.trim().toUpperCase(),
+                validade: document.getElementById('validade').value.trim().toUpperCase(),
+                fornecedor: document.getElementById('fornecedor').value.trim().toUpperCase(),
+                cnpj: document.getElementById('cnpj').value.trim(),
+                endereco: document.getElementById('endereco').value.trim().toUpperCase(),
+                responsavel: document.getElementById('responsavel').value.trim().toUpperCase(),
+                sac: document.getElementById('sac').value.trim(),
+                paisOrigem: document.getElementById('paisOrigem').value.trim().toUpperCase(),
+                ingredients: selectedIngredients
+            };
+
+            createAndDownloadWord(data);
+        }
+
+        // CRIAR E BAIXAR WORD
+        function createAndDownloadWord(data) {
+            let htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 40px;
+                            line-height: 1.5;
+                        }
+                        h1 {
+                            font-size: 18pt;
+                            font-weight: bold;
+                            text-transform: uppercase;
+                            text-decoration: underline;
+                            margin-bottom: 20px;
+                        }
+                        .section-title {
+                            font-weight: bold;
+                            font-size: 11pt;
+                            text-transform: uppercase;
+                            margin-top: 20px;
+                            margin-bottom: 10px;
+                        }
+                        .section-content {
+                            font-size: 11pt;
+                            margin-bottom: 10px;
+                            text-transform: uppercase;
+                        }
+                        .ingredient-list {
+                            margin: 10px 0;
+                            padding-left: 20px;
+                        }
+                        .ingredient-item {
+                            font-size: 11pt;
+                            text-transform: uppercase;
+                            margin: 5px 0;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>${data.productName}</h1>
+                    
+                    <div class="section-title">MODO DE USO:</div>
+                    <div class="section-content">${data.modoUso || ''}</div>
+                    
+                    <div class="section-title">PRECAUÇÕES:</div>
+                    <div class="section-content">${data.precaucoes || ''}</div>
+                    
+                    <div class="section-title">COMPOSIÇÃO:</div>
+                    <div class="ingredient-list">
+                        ${data.ingredients.map(ing => `<div class="ingredient-item">${ing.en}</div>`).join('')}
+                    </div>
+                    
+                    <div class="section-title">COMPOSIÇÃO (EM PORTUGUÊS):</div>
+                    <div class="ingredient-list">
+                        ${data.ingredients.map(ing => `<div class="ingredient-item">${ing.pt}</div>`).join('')}
+                    </div>
+                    
+                    <div class="section-title">IMPORTADO E DISTRIBUÍDO POR:</div>
+                    ${data.fornecedor ? `<div class="section-content">${data.fornecedor}</div>` : ''}
+                    ${data.cnpj ? `<div class="section-content"><strong>CNPJ:</strong> ${data.cnpj}</div>` : ''}
+                    ${data.endereco ? `<div class="section-content"><strong>ENDEREÇO:</strong> ${data.endereco}</div>` : ''}
+                    ${data.responsavel ? `<div class="section-content"><strong>RESPONSÁVEL TÉCNICO:</strong> ${data.responsavel}</div>` : ''}
+                    ${data.sac ? `<div class="section-content"><strong>SAC:</strong> ${data.sac}</div>` : ''}
+                    ${data.paisOrigem ? `<div class="section-content"><strong>PAÍS DE ORIGEM:</strong> ${data.paisOrigem}</div>` : ''}
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([htmlContent], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${data.productName.replace(/\s+/g, '_')}.doc`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            alert('✅ Documento gerado com sucesso!');
+        }
+
+        // IR PARA INDEX
+        function goToIndex() {
+            switchTab('index');
+        }
+    </script>
+</body>
+</html>
